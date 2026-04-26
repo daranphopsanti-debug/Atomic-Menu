@@ -84,7 +84,7 @@ local tMisc, _ = createTab("Misc")
 local tCam, _ = createTab("FreeCam")
 
 -- Credits
-local cl = Instance.new("TextLabel", tCred); cl.Size = UDim2.new(1, 0, 0, 150); cl.BackgroundTransparency = 1; cl.TextColor3 = Color3.new(1,1,1); cl.TextSize = 16; cl.Font = "GothamBold"; cl.Text = "ATOMIC MENU\nBy daran\n\nแก้บัคระบบบินแล้ว บินขึ้นแน่นอน!"
+local cl = Instance.new("TextLabel", tCred); cl.Size = UDim2.new(1, 0, 0, 150); cl.BackgroundTransparency = 1; cl.TextColor3 = Color3.new(1,1,1); cl.TextSize = 16; cl.Font = "GothamBold"; cl.Text = "ATOMIC MENU\nBy daran\n\nระบบ บิน ยังใช้ไม่ได้นะครับ"
 
 -- Player
 local spIn = Instance.new("TextBox", tPlay); spIn.BackgroundColor3 = Color3.fromRGB(30, 30, 40); spIn.PlaceholderText = "Walk Speed"; spIn.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", spIn); spIn:GetPropertyChangedSignal("Text"):Connect(function() if tonumber(spIn.Text) and player.Character then player.Character.Humanoid.WalkSpeed = tonumber(spIn.Text) end end)
