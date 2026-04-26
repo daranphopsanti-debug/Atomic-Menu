@@ -1,6 +1,4 @@
 -- [[ ATOMIC MENU V43.0 - FIX RUN ]] --
--- (คงเดิมทุกอย่าง เพิ่มเติมเพียง logic ในปุ่ม RTX ให้แสงสวยขึ้น)
-
 local PL, UIS, RS, L = game:GetService("Players"), game:GetService("UserInputService"), game:GetService("RunService"), game:GetService("Lighting")
 local TS, Http = game:GetService("TeleportService"), game:GetService("HttpService")
 local player = PL.LocalPlayer
@@ -134,29 +132,15 @@ addBtn("TP Player", tTele, function() local t = tpIn.Text:lower() for _, p in pa
 addBtn("Save WP", tTele, function() if tpIn.Text ~= "" then waypoints[tpIn.Text] = player.Character.HumanoidRootPart.CFrame end end)
 addBtn("TP WP", tTele, function() if waypoints[tpIn.Text] then player.Character.HumanoidRootPart.CFrame = waypoints[tpIn.Text] end end)
 
--- Visual (RTX SECTION - MODIFIED FOR BETTER LOOKS ONLY)
+-- Visual
 addToggle("FPS Show", tVis, function(v) fpsShow.Visible = v end)
 addToggle("RTX Mode", tVis, function(v)
     if v then
-        L.GlobalShadows = true
-        L.Ambient = Color3.fromRGB(150, 150, 150)
-        L.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
-        L.Brightness = 2.2 -- Boost brightness for pop
-        
-        -- Enhanced Bloom
-        local b = L:FindFirstChild("AtomicBloom") or Instance.new("BloomEffect", L)
-        b.Name = "AtomicBloom"; b.Intensity = 1.2; b.Size = 24; b.Threshold = 0.8
-        
-        -- Color Correction for RTX Look
-        local c = L:FindFirstChild("AtomicColor") or Instance.new("ColorCorrectionEffect", L)
-        c.Name = "AtomicColor"; c.Contrast = 0.2; c.Saturation = 0.25; c.Brightness = 0.05
-        
-        -- Sunrays (God Rays)
-        local s = L:FindFirstChild("AtomicRays") or Instance.new("SunRaysEffect", L)
-        s.Name = "AtomicRays"; s.Intensity = 0.1; s.Spread = 1
-        
+        L.GlobalShadows = true; L.Ambient = Color3.fromRGB(150, 150, 150); L.OutdoorAmbient = Color3.fromRGB(100, 100, 100); L.Brightness = 2.2
+        local b = L:FindFirstChild("AtomicBloom") or Instance.new("BloomEffect", L); b.Name = "AtomicBloom"; b.Intensity = 1.2; b.Size = 24; b.Threshold = 0.8
+        local c = L:FindFirstChild("AtomicColor") or Instance.new("ColorCorrectionEffect", L); c.Name = "AtomicColor"; c.Contrast = 0.2; c.Saturation = 0.25; c.Brightness = 0.05
+        local s = L:FindFirstChild("AtomicRays") or Instance.new("SunRaysEffect", L); s.Name = "AtomicRays"; s.Intensity = 0.1; s.Spread = 1
     else
-        -- Restore Defaults
         L.GlobalShadows = defShadows; L.Ambient = defAmbient; L.OutdoorAmbient = defOutdoor; L.Brightness = defBrightness
         if L:FindFirstChild("AtomicBloom") then L.AtomicBloom:Destroy() end
         if L:FindFirstChild("AtomicColor") then L.AtomicColor:Destroy() end
@@ -165,24 +149,30 @@ addToggle("RTX Mode", tVis, function(v)
 end)
 addToggle("ESP", tVis, function(v) 
     _G.E = v 
-    if not v then 
-        for _, p in pairs(PL:GetPlayers()) do 
-            if p.Character and p.Character:FindFirstChild("AtomicHighlight") then 
-                p.Character.AtomicHighlight:Destroy() 
-            end 
-        end 
-    end 
+    if not v then for _, p in pairs(PL:GetPlayers()) do if p.Character and p.Character:FindFirstChild("AtomicHighlight") then p.Character.AtomicHighlight:Destroy() end end end
 end)
+
+-- BEAM TRACER (NEW & COMPATIBLE)
+_G.TracerActive = false
+addToggle("Tracer", tVis, function(v)
+    _G.TracerActive = v
+    if not v then
+        for _, p in pairs(PL:GetPlayers()) do
+            if p.Character then
+                if p.Character:FindFirstChild("AtomicTracer") then p.Character.AtomicTracer:Destroy() end
+                if p.Character.HumanoidRootPart:FindFirstChild("AtomicAtch") then p.Character.HumanoidRootPart.AtomicAtch:Destroy() end
+            end
+        end
+    end
+end)
+
 addToggle("Xray", tVis, function(v) _G.Xray = v for _, o in pairs(workspace:GetDescendants()) do if o:IsA("BasePart") and not o.Parent:FindFirstChild("Humanoid") then o.LocalTransparencyModifier = v and 0.6 or 0 end end end)
 addToggle("Night Vision", tVis, function(v) L.Ambient = v and Color3.new(1,1,1) or defAmbient end)
 addToggle("FPS Boost", tVis, function(v)
     L.GlobalShadows = not v
     for _, o in pairs(workspace:GetDescendants()) do 
-        if o:IsA("BasePart") then 
-            o.Material = v and Enum.Material.SmoothPlastic or Enum.Material.Plastic 
-        elseif o:IsA("Decal") then
-            o.Transparency = v and 1 or 0
-        end 
+        if o:IsA("BasePart") then o.Material = v and Enum.Material.SmoothPlastic or Enum.Material.Plastic 
+        elseif o:IsA("Decal") then o.Transparency = v and 1 or 0 end 
     end 
 end)
 addToggle("No Fog", tVis, function(v) L.FogEnd = v and 1e6 or 1000 end)
@@ -214,6 +204,32 @@ UIS.InputChanged:Connect(function(i) if camRun and (i.UserInputType == Enum.User
 -- === [ MASTER LOOP ] ===
 RS.RenderStepped:Connect(function(dt)
     if fpsShow.Visible then fpsShow.Text = "FPS: " .. math.floor(1/dt) end
+    
+    -- Beam Tracer Logic
+    if _G.TracerActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local myAtch = player.Character.HumanoidRootPart:FindFirstChild("AtomicMyAtch") or Instance.new("Attachment", player.Character.HumanoidRootPart)
+        myAtch.Name = "AtomicMyAtch"
+        myAtch.Position = Vector3.new(0, -2, 0)
+
+        for _, p in pairs(PL:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHRP = p.Character.HumanoidRootPart
+                local tAtch = targetHRP:FindFirstChild("AtomicAtch") or Instance.new("Attachment", targetHRP)
+                tAtch.Name = "AtomicAtch"
+                
+                local beam = p.Character:FindFirstChild("AtomicTracer") or Instance.new("Beam", p.Character)
+                beam.Name = "AtomicTracer"
+                beam.Attachment0 = myAtch
+                beam.Attachment1 = tAtch
+                beam.Color = ColorSequence.new(Color3.fromRGB(150, 0, 255))
+                beam.Width0 = 0.1
+                beam.Width1 = 0.1
+                beam.FaceCamera = true
+                beam.Enabled = true
+            end
+        end
+    end
+
     if camRun then
         local c = workspace.CurrentCamera; c.CFrame = CFrame.new(c.CFrame.Position) * CFrame.Angles(0, math.rad(rotX), 0) * CFrame.Angles(math.rad(rotY), 0, 0)
         local m = Vector3.zero; if cw() then m += c.CFrame.LookVector end if cs() then m -= c.CFrame.LookVector end if ca() then m -= c.CFrame.RightVector end if cd() then m += c.CFrame.RightVector end if cup() then m += Vector3.new(0, 1, 0) end if cdn() then m -= Vector3.new(0, 1, 0) end
@@ -236,9 +252,7 @@ RS.RenderStepped:Connect(function(dt)
         for _, p in pairs(PL:GetPlayers()) do 
             if p ~= player and p.Character then 
                 local h = p.Character:FindFirstChild("AtomicHighlight") or Instance.new("Highlight", p.Character)
-                h.Name = "AtomicHighlight"
-                h.FillColor = Color3.fromRGB(150, 0, 255)
-                h.Enabled = true 
+                h.Name = "AtomicHighlight"; h.FillColor = Color3.fromRGB(150, 0, 255); h.Enabled = true 
             end 
         end 
     end
