@@ -1,4 +1,4 @@
--- [[ ATOMIC MENU V43.0 - FIX RUN ]] --
+-- [[ ATOMIC MENU V43.0 - FULL OPTIMIZED ]] --
 local PL, UIS, RS, L = game:GetService("Players"), game:GetService("UserInputService"), game:GetService("RunService"), game:GetService("Lighting")
 local TS, Http = game:GetService("TeleportService"), game:GetService("HttpService")
 local player = PL.LocalPlayer
@@ -9,6 +9,7 @@ for _, v in pairs(player.PlayerGui:GetChildren()) do if v.Name:find("Atomic") th
 -- === [ 2. SETTINGS ] ===
 local menuLocked, buttonLocked, camRun = false, false, false
 local waypoints = {}
+local aimAssist = false
 _G.Nc, _G.AF, _G.E, _G.Xray, _G.Invis, _G.FE = false, false, false, false, false, false
 
 local flying = false
@@ -125,7 +126,10 @@ addToggle("Inf Jump", tPlay, function(v) if v then _G.J = UIS.JumpRequest:Connec
 addToggle("Noclip", tPlay, function(v) _G.Nc = v end)
 addToggle("Invis", tPlay, function(v) if player.Character then for _, p in pairs(player.Character:GetDescendants()) do if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end end end end)
 
--- Hitbox (Fixed)
+-- NEW: Aim Assist
+addToggle("Aim Assist", tPlay, function(v) aimAssist = v end)
+
+-- Hitbox
 addToggle("Hitbox", tPlay, function(v)
     for _, p in pairs(PL:GetPlayers()) do
         if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -218,6 +222,24 @@ UIS.InputChanged:Connect(function(i) if camRun and (i.UserInputType == Enum.User
 RS.RenderStepped:Connect(function(dt)
     if fpsShow.Visible then fpsShow.Text = "FPS: " .. math.floor(1/dt) end
     
+    -- Aim Assist Logic
+    if aimAssist and player.Character then
+        local cam = workspace.CurrentCamera
+        local closest, dist = nil, math.huge
+        for _, p in pairs(PL:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+                local pos, onscreen = cam:WorldToViewportPoint(p.Character.Head.Position)
+                if onscreen then
+                    local d = (Vector2.new(pos.X, pos.Y) - UIS:GetMouseLocation()).Magnitude
+                    if d < dist then dist = d; closest = p end
+                end
+            end
+        end
+        if closest then
+            cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, closest.Character.Head.Position), 0.1)
+        end
+    end
+
     -- Beam Tracer Rendering
     if _G.TracerActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local myAtch = player.Character.HumanoidRootPart:FindFirstChild("AtomicMyAtch") or Instance.new("Attachment", player.Character.HumanoidRootPart)
