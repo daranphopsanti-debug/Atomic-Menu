@@ -114,7 +114,7 @@ local tCred = createTab("Credits"); local tPlay = createTab("Player"); local tTe
 local cBtn = addBtn("credits by daran - Atomic Menu full version", tCred, function() end)
 cBtn.Parent.UIGridLayout:Destroy(); cBtn.Size = UDim2.new(1, -5, 0, 32); cBtn.TextSize = 10
 
--- Player
+-- Player Tab
 addToggle("FLY", tPlay, function(v) ToggleFly(v) end)
 addBtn("Speed +", tPlay, function() flySpeed += 20 end)
 addBtn("Speed -", tPlay, function() flySpeed = math.max(20, flySpeed - 20) end)
@@ -124,15 +124,28 @@ addToggle("AntiFling", tPlay, function(v) _G.AF = v end)
 addToggle("Inf Jump", tPlay, function(v) if v then _G.J = UIS.JumpRequest:Connect(function() if player.Character then player.Character.Humanoid:ChangeState(3) end end) else if _G.J then _G.J:Disconnect() end end end)
 addToggle("Noclip", tPlay, function(v) _G.Nc = v end)
 addToggle("Invis", tPlay, function(v) if player.Character then for _, p in pairs(player.Character:GetDescendants()) do if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end end end end)
+
+-- Hitbox (Fixed)
+addToggle("Hitbox", tPlay, function(v)
+    for _, p in pairs(PL:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = p.Character.HumanoidRootPart
+            hrp.Size = v and Vector3.new(5,5,5) or Vector3.new(2,2,1)
+            hrp.Transparency = v and 0.5 or 1
+            hrp.Material = v and Enum.Material.Neon or Enum.Material.Plastic
+        end
+    end
+end)
+
 addBtn("Reset", tPlay, function() if player.Character then player.Character.Humanoid.Health = 0 end end)
 
--- Teleport
+-- Teleport Tab
 local tpIn = Instance.new("TextBox", tTele); tpIn.BackgroundColor3 = Color3.fromRGB(30,30,40); tpIn.PlaceholderText = "Name / WP"; tpIn.TextColor3 = Color3.new(1,1,1); tpIn.TextSize = 9; Instance.new("UICorner", tpIn)
 addBtn("TP Player", tTele, function() local t = tpIn.Text:lower() for _, p in pairs(PL:GetPlayers()) do if p.Name:lower():find(t) and p.Character then player.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame end end end)
 addBtn("Save WP", tTele, function() if tpIn.Text ~= "" then waypoints[tpIn.Text] = player.Character.HumanoidRootPart.CFrame end end)
 addBtn("TP WP", tTele, function() if waypoints[tpIn.Text] then player.Character.HumanoidRootPart.CFrame = waypoints[tpIn.Text] end end)
 
--- Visual
+-- Visual Tab
 addToggle("FPS Show", tVis, function(v) fpsShow.Visible = v end)
 addToggle("RTX Mode", tVis, function(v)
     if v then
@@ -152,7 +165,7 @@ addToggle("ESP", tVis, function(v)
     if not v then for _, p in pairs(PL:GetPlayers()) do if p.Character and p.Character:FindFirstChild("AtomicHighlight") then p.Character.AtomicHighlight:Destroy() end end end
 end)
 
--- BEAM TRACER (NEW & COMPATIBLE)
+-- Tracer (Beam System)
 _G.TracerActive = false
 addToggle("Tracer", tVis, function(v)
     _G.TracerActive = v
@@ -178,14 +191,14 @@ end)
 addToggle("No Fog", tVis, function(v) L.FogEnd = v and 1e6 or 1000 end)
 addToggle("Fast E", tVis, function(v) _G.FE = v for _, p in pairs(game:GetDescendants()) do if p:IsA("ProximityPrompt") then p.HoldDuration = v and 0 or 1 end end end)
 
--- Misc
+-- Misc Tab
 addBtn("Rejoin", tMisc, function() TS:TeleportToPlaceInstance(game.PlaceId, game.JobId, player) end)
 addBtn("Server Hop", tMisc, function() 
     local s = Http:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
     for _, v in pairs(s.data) do if v.playing < v.maxPlayers and v.id ~= game.JobId then TS:TeleportToPlaceInstance(game.PlaceId, v.id, player) return end end 
 end)
 
--- FreeCam
+-- FreeCam Tab
 local function createCamPad(y, c)
     local f = Instance.new("Frame", screenGui); f.Size = UDim2.new(0, 120, 0, 120); f.Position = UDim2.new(0.75, 0, y, 0); f.BackgroundTransparency = 1; f.Visible = false
     local function b(t, px, py)
@@ -205,7 +218,7 @@ UIS.InputChanged:Connect(function(i) if camRun and (i.UserInputType == Enum.User
 RS.RenderStepped:Connect(function(dt)
     if fpsShow.Visible then fpsShow.Text = "FPS: " .. math.floor(1/dt) end
     
-    -- Beam Tracer Logic
+    -- Beam Tracer Rendering
     if _G.TracerActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local myAtch = player.Character.HumanoidRootPart:FindFirstChild("AtomicMyAtch") or Instance.new("Attachment", player.Character.HumanoidRootPart)
         myAtch.Name = "AtomicMyAtch"
@@ -222,10 +235,8 @@ RS.RenderStepped:Connect(function(dt)
                 beam.Attachment0 = myAtch
                 beam.Attachment1 = tAtch
                 beam.Color = ColorSequence.new(Color3.fromRGB(150, 0, 255))
-                beam.Width0 = 0.1
-                beam.Width1 = 0.1
-                beam.FaceCamera = true
-                beam.Enabled = true
+                beam.Width0, beam.Width1 = 0.1, 0.1
+                beam.FaceCamera, beam.Enabled = true, true
             end
         end
     end
